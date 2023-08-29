@@ -1,0 +1,8 @@
+{
+    "type": "app",
+    "exec": "./test/test.sh",
+    "args":
+    [
+        
+    ]
+}
