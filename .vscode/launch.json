@@ -11,7 +11,7 @@
             "mainClass": "DownloadHub.App",
             "projectName": "DownloadHub_157d8f1d",
             // "vmArgs": "--module-path lib/fx_macos_m --add-modules javafx.controls,javafx.fxml",
-            "args": "unsub test"
+            "args": "run CompSci"
         }
     ]
 }

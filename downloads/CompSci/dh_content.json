@@ -1,0 +1,9 @@
+{
+    "type": "app",
+    "exec": "java",
+    "args":
+    [
+        "-jar",
+        "./ApCompSci.jar"
+    ]
+}

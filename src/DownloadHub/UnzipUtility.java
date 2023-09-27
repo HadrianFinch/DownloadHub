@@ -35,6 +35,14 @@ public class UnzipUtility
         while (entry != null)
         {
             String filePath = destDirectory + File.separator + entry.getName();
+            
+            if (filePath.contains("__MACOSX"))
+            {
+                zipIn.closeEntry();
+                entry = zipIn.getNextEntry();
+                continue;
+            }
+
             if (!entry.isDirectory())
             {
                 // if the entry is a file, extracts it

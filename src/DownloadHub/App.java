@@ -5,6 +5,7 @@ import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
+import java.io.OutputStream;
 import java.util.ArrayList;
 import java.util.Arrays;
 
@@ -18,7 +19,27 @@ import DownloadHub.Data.Subscriptions;
 
 public class App
 {
-    public static void main(String[] argstring) throws Exception
+    public static void PipeStream(InputStream input, OutputStream output) throws IOException
+    {
+        byte buffer[] = new byte[1024];
+        int numRead = 0;
+
+        if (input.available() <= 0)
+        {
+            return;
+        }
+
+        do
+        {
+            numRead = input.read(buffer);
+            output.write(buffer, 0, numRead);
+        }
+        while (input.available() > 0);
+
+        output.flush();
+    }
+
+    private static void RunFromCmd(String[] argstring) throws Exception
     {
         Gson gson = new Gson();
 
@@ -110,7 +131,9 @@ public class App
                             {
                                 System.out.println("[info] Upgrade for " + sub.nickname + " to version " + manifest.version + " is available.");
 
-                                if (!sub.autoUpdate)
+                                boolean force = (argstring.length >= 2 && argstring[1].equals("-f"));
+
+                                if (!sub.autoUpdate && !force)
                                 {
                                     System.out.print("[input] > Do you want to download update for " + sub.nickname + "? (y/n)\n[input] < ");
                                     String s = in.readLine();
@@ -227,22 +250,36 @@ public class App
 
                                             ProcessBuilder processBuilder = new ProcessBuilder(strarr);
                                             processBuilder.directory(new File(destFolderpath));
+                                            
                                             process = processBuilder.start();
+                                            
+                                            InputStream is = process.getInputStream();
+                                            OutputStream os = process.getOutputStream();
+                                            while (process.isAlive())
+                                            {
+                                                App.PipeStream(is, System.out);
+
+                                                if (System.in.available() > 0)
+                                                {
+                                                    App.PipeStream(System.in, os);
+                                                }
+                                            }
+
+                                            int returnCode = process.exitValue();
+                                            if (returnCode == 237)
+                                            {
+                                                String[] strs = new String[3];
+                                                strs[0] = "update";
+                                                strs[1] = argstring[1];
+                                                strs[1] = "-f";
+
+                                                RunFromCmd(strs);
+                                            }
                                         }
                                         catch (IOException e)
                                         {
                                             System.out.println("[error] App execution file does not exist. Terminating.");
                                             break;
-                                        }
-
-                                        InputStream is = process.getInputStream();
-                                        InputStreamReader isr = new InputStreamReader(is);
-                                        BufferedReader br = new BufferedReader(isr);
-                                        String line;
-
-                                        while ((line = br.readLine()) != null)
-                                        {
-                                            System.out.println("    [subprocess] " + line);
                                         }
 
                                         break;
@@ -306,7 +343,7 @@ public class App
                             {
                                 System.out.println("[warning] Content already deleted?");
                             }
-                            
+
                             System.out.println("[info] Sucessfully unsubscribed from " + sub.manifestURL);
                         }
                         else
@@ -326,5 +363,10 @@ public class App
                     break;
             }
         }
+    }
+
+    public static void main(String[] argstring) throws Exception
+    {
+        RunFromCmd(argstring);
     }
 }
